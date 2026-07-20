@@ -1,0 +1,9 @@
+{
+  "name": "boundary-amd-devmaster-track-2",
+  "private": true,
+  "workspaces": ["frontend"],
+  "scripts": {
+    "test": "npm --workspace frontend test",
+    "typecheck": "npm --workspace frontend run typecheck"
+  }
+}

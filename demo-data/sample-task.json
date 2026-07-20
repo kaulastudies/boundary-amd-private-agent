@@ -1,0 +1,5 @@
+{
+  "id": "demo-001",
+  "prompt": "Summarize a local project status report.",
+  "requires_permission": false
+}
