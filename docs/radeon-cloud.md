@@ -45,8 +45,10 @@ Create a separate, persistent application environment and start FastAPI:
 ```bash
 cd /workspace/boundary-amd-private-agent
 bash scripts/cloud/setup-backend.sh
-BOUNDARY_PORT=8000 \
-BOUNDARY_LOCAL_MODEL_ENDPOINT=http://127.0.0.1:8001 \
+BOUNDARY_PORT=8080 \
+BOUNDARY_MODEL_BASE_URL=http://127.0.0.1:8000/v1 \
+BOUNDARY_MODEL_NAME=boundary-qwen3-8b \
+BOUNDARY_MODEL_TIMEOUT_SECONDS=30 \
 bash scripts/cloud/run-backend.sh
 ```
 
@@ -58,7 +60,11 @@ Test the backend without touching the inference environment:
 
 ```bash
 /workspace/venvs/boundary-backend/bin/python -m pytest backend/tests
-curl --fail http://127.0.0.1:8000/health
+curl --fail http://127.0.0.1:8080/health
+curl --fail http://127.0.0.1:8080/model/health
+curl --fail --request POST http://127.0.0.1:8080/agent/plan \
+  --header 'Content-Type: application/json' \
+  --data '{"task":"Inspect the repository and propose safe next steps."}'
 ```
 
 ## Security boundary
@@ -67,6 +73,11 @@ curl --fail http://127.0.0.1:8000/health
   shell history.
 - Do not connect core inference to remote AI APIs. Model execution must remain
   on the assigned Radeon Cloud GPU.
-- `BOUNDARY_LOCAL_MODEL_ENDPOINT` must point to an approved local service; the
-  scaffold does not start that service or download a model.
+- `BOUNDARY_MODEL_BASE_URL` accepts only `http` or `https` endpoints on
+  `localhost`, loopback, or explicit private/link-local IP addresses. It never
+  falls back to a public provider.
+- The expected vLLM service is `http://127.0.0.1:8000/v1`, serving
+  `boundary-qwen3-8b`. BOUNDARY does not start vLLM or download a model.
+- Planning returns validated steps only; it does not execute tools and must not
+  request or expose hidden chain-of-thought.
 - Review environment reports before sharing them outside the project.

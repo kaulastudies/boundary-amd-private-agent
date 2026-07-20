@@ -11,6 +11,6 @@ test("status page includes local-only model state", () => {
 
 test("health client defaults to loopback backend", () => {
   const client = fs.readFileSync(path.join(__dirname, "..", "lib", "health.ts"), "utf8");
-  assert.match(client, /http:\/\/127\.0\.0\.1:8000/);
+  assert.match(client, /http:\/\/127\.0\.0\.1:8080/);
   assert.match(client, /cache: "no-store"/);
 });

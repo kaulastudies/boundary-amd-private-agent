@@ -16,4 +16,12 @@ if ! grep -q 'refusing to create or modify the bundled /opt/venv' "${SCRIPT_DIR}
   printf 'ERROR: setup-backend.sh must protect /opt/venv.\n' >&2
   exit 1
 fi
+if grep -Eq 'pip install.*(torch|vllm|rocm)' "${SCRIPT_DIR}/setup-backend.sh"; then
+  printf 'ERROR: backend setup must not install the supplied GPU stack.\n' >&2
+  exit 1
+fi
+if ! grep -q 'BOUNDARY_MODEL_BASE_URL' "${SCRIPT_DIR}/run-backend.sh"; then
+  printf 'ERROR: run-backend.sh must configure the local model endpoint.\n' >&2
+  exit 1
+fi
 printf 'Cloud script syntax and safety checks passed.\n'

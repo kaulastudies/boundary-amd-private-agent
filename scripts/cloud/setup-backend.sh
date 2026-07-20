@@ -11,11 +11,17 @@ if [[ "${APP_VENV}" == /opt/venv || "${APP_VENV}" == /opt/venv/* ]]; then
   exit 1
 fi
 if [[ -z "${PYTHON_BOOTSTRAP}" || ! -x "${PYTHON_BOOTSTRAP}" ]]; then
-  printf 'ERROR: python3 is required to create the application environment. Nothing was installed.\n' >&2
+  printf 'ERROR: Python 3.10 or newer is required to create the application environment. Nothing was installed.\n' >&2
   exit 1
 fi
 if [[ ! -f "${REPO_ROOT}/backend/pyproject.toml" ]]; then
   printf 'ERROR: backend/pyproject.toml was not found under %s.\n' "${REPO_ROOT}" >&2
+  exit 1
+fi
+
+if ! "${PYTHON_BOOTSTRAP}" -c 'import sys; raise SystemExit(0 if sys.version_info >= (3, 10) else 1)'; then
+  printf 'ERROR: Python 3.10 or newer is required; found: ' >&2
+  "${PYTHON_BOOTSTRAP}" --version >&2 || true
   exit 1
 fi
 

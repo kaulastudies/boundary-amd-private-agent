@@ -15,7 +15,7 @@ scaffolded without a final model implementation, remote AI APIs, or API keys.
 
 ## Prerequisites
 
-- Python 3.11+
+- Python 3.10+
 - Node.js 20+
 - npm 10+
 
@@ -25,11 +25,12 @@ scaffolded without a final model implementation, remote AI APIs, or API keys.
 py -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -e ".\backend[dev]"
-python -m uvicorn boundary_backend.main:app --app-dir backend/src --reload
+python -m uvicorn boundary_backend.main:app --app-dir backend/src --reload --port 8080
 ```
 
-The API is available at `http://localhost:8000`; health is at
-`http://localhost:8000/health`.
+The API is available at `http://localhost:8080`; health is at
+`http://localhost:8080/health`. It connects only to a validated local vLLM
+endpoint, which defaults to `http://127.0.0.1:8000/v1`.
 
 ## Start the frontend
 
@@ -56,9 +57,21 @@ Convenience launchers are provided in `scripts/start-backend.ps1` and
 
 ## Local-only model boundary
 
-`LocalModelClient` defines the future inference contract. The included
-`UnconfiguredLocalModelClient` fails explicitly if generation is attempted.
-No remote provider dependency, credential, or API-key setting is included.
+`LocalModelClient` defines the local inference contract and
+`VLLMLocalModelClient` implements it through vLLM's local OpenAI-compatible HTTP
+surface. It requires no API key and rejects public or unsupported endpoint
+URLs. No remote provider dependency, credential, or fallback is included.
+
+Configuration:
+
+```dotenv
+BOUNDARY_MODEL_BASE_URL=http://127.0.0.1:8000/v1
+BOUNDARY_MODEL_NAME=boundary-qwen3-8b
+BOUNDARY_MODEL_TIMEOUT_SECONDS=30
+```
+
+`GET /model/health` checks model discovery. `POST /agent/plan` returns validated
+plan steps and never executes tools or exposes hidden chain-of-thought.
 
 ## Radeon Cloud
 
@@ -75,7 +88,8 @@ cd /workspace/boundary-amd-private-agent
 bash scripts/cloud/verify-rocm.sh
 bash scripts/cloud/check-vllm.sh
 bash scripts/cloud/setup-backend.sh
-BOUNDARY_PORT=8000 BOUNDARY_LOCAL_MODEL_ENDPOINT=http://127.0.0.1:8001 \
+BOUNDARY_PORT=8080 BOUNDARY_MODEL_BASE_URL=http://127.0.0.1:8000/v1 \
+  BOUNDARY_MODEL_NAME=boundary-qwen3-8b \
   bash scripts/cloud/run-backend.sh
 ```
 
