@@ -37,11 +37,32 @@ endpoint, which defaults to `http://127.0.0.1:8000/v1`.
 ```powershell
 cd frontend
 npm install
+npm run build
 npm run dev
 ```
 
-Open `http://localhost:3000`. Set `NEXT_PUBLIC_BACKEND_URL` to override the
-default backend URL.
+Open `http://localhost:3000`. Set the server-only `BOUNDARY_BACKEND_URL` to
+override the default `http://127.0.0.1:8080`. The browser never receives that
+configuration and calls only same-origin `/api/boundary/*` routes. The Next.js
+proxy validates local/private origins, allows only known workflow routes,
+sanitizes errors, and applies bounded timeouts.
+
+## Control Center
+
+The responsive Control Center presents the complete BOUNDARY demo without curl:
+
+1. Compose a task or load the confidential-contract demonstration.
+2. Create a schema-constrained, policy-normalized workflow run.
+3. Inspect safe, review, sensitive, destructive, and blocked step cards.
+4. Approve or reject protected actions with an actor and optional reason.
+5. Confirm simulation-only execution and review stored results.
+6. Inspect the chronological audit trail and SHA-256 verification status.
+
+The interface clearly marks `simulated=true` and
+`no_external_side_effect=true`. **Reset View** clears frontend state only and
+does not delete persistent runs or audit records. See
+[`frontend/README.md`](frontend/README.md) for local development and the demo
+script.
 
 ## Tests
 

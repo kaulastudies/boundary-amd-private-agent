@@ -36,4 +36,12 @@ if ! grep -q 'BOUNDARY_MODEL_BASE_URL' "${SCRIPT_DIR}/run-backend.sh"; then
   printf 'ERROR: run-backend.sh must configure the local model endpoint.\n' >&2
   exit 1
 fi
+if grep -Eq '(NEXT_PUBLIC_BACKEND|https?://[^ ]*(openai|anthropic|google))' "${SCRIPT_DIR}/run-frontend.sh"; then
+  printf 'ERROR: frontend launcher must use only the server-side local backend proxy.\n' >&2
+  exit 1
+fi
+if grep -Eiq '(npm install|pnpm install|yarn install)' "${SCRIPT_DIR}/run-frontend.sh"; then
+  printf 'ERROR: frontend runtime launcher must not install packages.\n' >&2
+  exit 1
+fi
 printf 'Cloud script syntax and safety checks passed.\n'

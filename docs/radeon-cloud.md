@@ -114,6 +114,29 @@ chain, copies the database to an isolated temporary file, tampers only with that
 copy, confirms detection, and removes the copy. It never alters the primary
 database.
 
+## Control Center on Radeon Cloud
+
+Build the Next.js frontend once, then launch its production server:
+
+```bash
+cd /workspace/boundary-amd-private-agent
+npm install
+npm --workspace frontend run build
+BOUNDARY_BACKEND_URL=http://127.0.0.1:8080 \
+BOUNDARY_BACKEND_TIMEOUT_MS=60000 \
+bash scripts/cloud/run-frontend.sh
+```
+
+Open port 3000 through the Radeon Cloud/JupyterLab access mechanism. The browser
+connects only to Next.js. Explicit server routes proxy the health, run,
+approval, execution, and audit allowlist to local FastAPI; the backend origin is
+never published as a browser environment variable.
+
+For a 3–5 minute demonstration, load the example contract task, create the run,
+review policy labels, decide approvals, execute simulations, and show the audit
+verification card. Resetting the view does not delete SQLite workflow history.
+All current tool operations remain simulations with no external side effects.
+
 ## Security boundary
 
 - Do not place secrets, tokens, or credentials in Git, notebooks, demo data, or
