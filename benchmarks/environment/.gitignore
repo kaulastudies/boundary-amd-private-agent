@@ -1,0 +1,3 @@
+# Environment reports can include host-specific details. Keep the directory only.
+*.txt
+!.gitignore

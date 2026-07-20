@@ -59,3 +59,26 @@ Convenience launchers are provided in `scripts/start-backend.ps1` and
 `LocalModelClient` defines the future inference contract. The included
 `UnconfiguredLocalModelClient` fails explicitly if generation is attempted.
 No remote provider dependency, credential, or API-key setting is included.
+
+## Radeon Cloud
+
+Radeon Cloud is supported as the Ubuntu 22.04 GPU target. The expected supplied
+environment provides ROCm 7.2.1 for `gfx1100`, with PyTorch and vLLM in an
+existing bundled environment such as `/opt/venv`. BOUNDARY never replaces or
+modifies that GPU stack.
+
+Keep the repository and application environment on persistent `/workspace`
+storage. From a JupyterLab terminal:
+
+```bash
+cd /workspace/boundary-amd-private-agent
+bash scripts/cloud/verify-rocm.sh
+bash scripts/cloud/check-vllm.sh
+bash scripts/cloud/setup-backend.sh
+BOUNDARY_PORT=8000 BOUNDARY_LOCAL_MODEL_ENDPOINT=http://127.0.0.1:8001 \
+  bash scripts/cloud/run-backend.sh
+```
+
+JupyterLab is the primary access path; SSH is optional when enabled. See
+[`docs/radeon-cloud.md`](docs/radeon-cloud.md) for the complete laptop → GitHub
+→ Radeon Cloud workflow, exact checks, storage layout, and security rules.
