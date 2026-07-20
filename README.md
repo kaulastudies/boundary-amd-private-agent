@@ -70,8 +70,12 @@ BOUNDARY_MODEL_NAME=boundary-qwen3-8b
 BOUNDARY_MODEL_TIMEOUT_SECONDS=30
 ```
 
-`GET /model/health` checks model discovery. `POST /agent/plan` returns validated
-plan steps and never executes tools or exposes hidden chain-of-thought.
+`GET /model/health` checks model discovery. `POST /agent/plan` uses vLLM JSON
+schema constraints, returns validated plan steps, and never executes tools or
+exposes hidden chain-of-thought. The backend always forces approval for
+`sensitive`, `destructive`, and `blocked` steps, regardless of model output. A
+semantically invalid result receives at most one repair request to the same
+local endpoint.
 
 ## Radeon Cloud
 

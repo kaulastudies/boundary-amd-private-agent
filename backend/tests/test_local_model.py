@@ -1,4 +1,5 @@
 import asyncio
+import json
 
 import httpx
 import pytest
@@ -30,6 +31,60 @@ def test_model_discovery_parses_ids() -> None:
         )
     )
     assert asyncio.run(client.available_models()) == {"boundary-qwen3-8b"}
+    asyncio.run(client._http_client.aclose())
+
+
+def test_schema_generation_uses_strict_local_vllm_settings() -> None:
+    captured = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured["url"] = str(request.url)
+        captured["authorization"] = request.headers.get("authorization")
+        captured["body"] = json.loads(request.content)
+        return httpx.Response(
+            200,
+            json={"choices": [{"message": {"content": '{"steps":[]}'}}]},
+        )
+
+    client = make_client(handler)
+    result = asyncio.run(
+        client.generate_with_schema(
+            "plan locally", {"type": "object"}, "boundary_plan"
+        )
+    )
+
+    assert result == '{"steps":[]}'
+    assert captured["url"].startswith("http://127.0.0.1:8000/v1/")
+    assert captured["authorization"] is None
+    assert captured["body"]["temperature"] == 0
+    assert captured["body"]["stream"] is False
+    assert 1 <= captured["body"]["max_tokens"] <= 4096
+    assert captured["body"]["chat_template_kwargs"] == {
+        "enable_thinking": False
+    }
+    assert captured["body"]["response_format"] == {
+        "type": "json_schema",
+        "json_schema": {
+            "name": "boundary_plan",
+            "strict": True,
+            "schema": {"type": "object"},
+        },
+    }
+    asyncio.run(client._http_client.aclose())
+
+
+def test_generic_generate_retains_json_object_mode() -> None:
+    captured = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured.update(json.loads(request.content))
+        return httpx.Response(
+            200, json={"choices": [{"message": {"content": "{}"}}]}
+        )
+
+    client = make_client(handler)
+    assert asyncio.run(client.generate("generic JSON")) == "{}"
+    assert captured["response_format"] == {"type": "json_object"}
     asyncio.run(client._http_client.aclose())
 
 

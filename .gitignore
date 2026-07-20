@@ -226,6 +226,12 @@ benchmarks/results/
 .DS_Store
 Thumbs.db
 
+# Local Git transfer artifacts
+*.bundle
+
+# Radeon Cloud smoke-test output
+boundary-artifacts/
+
 # Marimo
 marimo/_static/
 marimo/_lsp/

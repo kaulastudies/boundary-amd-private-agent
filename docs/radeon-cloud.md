@@ -67,6 +67,20 @@ curl --fail --request POST http://127.0.0.1:8080/agent/plan \
   --data '{"task":"Inspect the repository and propose safe next steps."}'
 ```
 
+After both services are running, execute the bounded live smoke test:
+
+```bash
+cd /workspace/boundary-amd-private-agent
+bash scripts/cloud/test-live-plan.sh
+cat /workspace/boundary-artifacts/debug/agent-plan-validation.txt
+```
+
+The smoke test checks vLLM discovery, both backend health endpoints, and one
+schema-constrained plan. It validates the plan and deterministic approval policy
+locally, then writes a non-secret result to
+`/workspace/boundary-artifacts/debug/agent-plan-validation.txt`. It does not
+launch a model, install packages, or send credentials.
+
 ## Security boundary
 
 - Do not place secrets, tokens, or credentials in Git, notebooks, demo data, or

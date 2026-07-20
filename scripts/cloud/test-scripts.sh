@@ -8,8 +8,12 @@ for script in "${SCRIPT_DIR}"/*.sh; do
   bash -n "${script}"
 done
 
-if grep -Eiq '(pip install|apt(-get)? install|dnf install|yum install)' "${SCRIPT_DIR}/verify-rocm.sh" "${SCRIPT_DIR}/check-vllm.sh"; then
+if grep -Eiq '(pip install|apt(-get)? install|dnf install|yum install)' "${SCRIPT_DIR}/verify-rocm.sh" "${SCRIPT_DIR}/check-vllm.sh" "${SCRIPT_DIR}/test-live-plan.sh"; then
   printf 'ERROR: verification scripts must not install packages.\n' >&2
+  exit 1
+fi
+if grep -Eiq '(authorization:|api[_ -]?key|vllm serve|huggingface-cli)' "${SCRIPT_DIR}/test-live-plan.sh"; then
+  printf 'ERROR: live plan test must not use credentials, launch vLLM, or download models.\n' >&2
   exit 1
 fi
 if ! grep -q 'refusing to create or modify the bundled /opt/venv' "${SCRIPT_DIR}/setup-backend.sh"; then

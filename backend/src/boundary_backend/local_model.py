@@ -46,6 +46,12 @@ class LocalModelClient(ABC):
     async def available_models(self) -> Set[str]:
         """Return model identifiers advertised by the local runtime."""
 
+    async def generate_with_schema(
+        self, prompt: str, json_schema: dict[str, Any], schema_name: str
+    ) -> str:
+        """Generate schema-constrained JSON when supported by the runtime."""
+        return await self.generate(prompt)
+
 
 class VLLMLocalModelClient(LocalModelClient):
     """Client for a local vLLM OpenAI-compatible HTTP server."""
@@ -116,7 +122,13 @@ class VLLMLocalModelClient(LocalModelClient):
             model_ids.add(item["id"])
         return model_ids
 
-    async def generate(self, prompt: str) -> str:
+    async def _generate(
+        self,
+        prompt: str,
+        response_format: dict[str, Any],
+        temperature: float,
+        max_tokens: int,
+    ) -> str:
         payload = self._json_object(
             await self._request(
                 "POST",
@@ -133,8 +145,11 @@ class VLLMLocalModelClient(LocalModelClient):
                         },
                         {"role": "user", "content": prompt},
                     ],
-                    "temperature": 0.1,
-                    "response_format": {"type": "json_object"},
+                    "temperature": temperature,
+                    "stream": False,
+                    "max_tokens": max_tokens,
+                    "chat_template_kwargs": {"enable_thinking": False},
+                    "response_format": response_format,
                 },
             )
         )
@@ -149,6 +164,33 @@ class VLLMLocalModelClient(LocalModelClient):
                 "completion response contains no text content"
             )
         return content
+
+    async def generate(self, prompt: str) -> str:
+        """Generate generic JSON while preserving the milestone 2 interface."""
+        return await self._generate(
+            prompt=prompt,
+            response_format={"type": "json_object"},
+            temperature=0.1,
+            max_tokens=2048,
+        )
+
+    async def generate_with_schema(
+        self, prompt: str, json_schema: dict[str, Any], schema_name: str
+    ) -> str:
+        """Generate JSON constrained by an OpenAI-compatible JSON schema."""
+        return await self._generate(
+            prompt=prompt,
+            response_format={
+                "type": "json_schema",
+                "json_schema": {
+                    "name": schema_name,
+                    "strict": True,
+                    "schema": json_schema,
+                },
+            },
+            temperature=0.0,
+            max_tokens=2048,
+        )
 
     async def stream(self, prompt: str) -> AsyncIterator[str]:
         yield await self.generate(prompt)

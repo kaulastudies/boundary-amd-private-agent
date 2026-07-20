@@ -3,7 +3,7 @@
 from enum import Enum
 from typing import Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class HealthResponse(BaseModel):
@@ -28,28 +28,22 @@ class RiskLevel(str, Enum):
 
 
 class PlanRequest(BaseModel):
-    task: str = Field(min_length=1, max_length=10_000)
+    model_config = ConfigDict(extra="forbid")
+
+    task: str = Field(min_length=1, max_length=10_000, strict=True)
 
 
 class PlanStep(BaseModel):
-    id: str = Field(min_length=1, max_length=100)
-    title: str = Field(min_length=1, max_length=200)
-    description: str = Field(min_length=1, max_length=2_000)
-    risk_level: RiskLevel
-    requires_approval: bool
+    model_config = ConfigDict(extra="forbid")
 
-    @model_validator(mode="after")
-    def sensitive_steps_require_approval(self) -> "PlanStep":
-        if self.risk_level in {
-            RiskLevel.sensitive,
-            RiskLevel.destructive,
-            RiskLevel.blocked,
-        } and not self.requires_approval:
-            raise ValueError(
-                "sensitive, destructive, and blocked steps require approval"
-            )
-        return self
+    id: str = Field(min_length=1, max_length=100, strict=True)
+    title: str = Field(min_length=1, max_length=200, strict=True)
+    description: str = Field(min_length=1, max_length=2_000, strict=True)
+    risk_level: RiskLevel
+    requires_approval: bool = Field(strict=True)
 
 
 class PlanResponse(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     steps: list[PlanStep] = Field(min_length=1, max_length=50)
