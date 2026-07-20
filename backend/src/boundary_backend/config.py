@@ -2,6 +2,7 @@
 
 import ipaddress
 import os
+from pathlib import Path
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, Field, field_validator
@@ -9,6 +10,13 @@ from pydantic import BaseModel, Field, field_validator
 DEFAULT_MODEL_BASE_URL = "http://127.0.0.1:8000/v1"
 DEFAULT_MODEL_NAME = "boundary-qwen3-8b"
 DEFAULT_MODEL_TIMEOUT_SECONDS = 30.0
+
+
+def default_database_path() -> str:
+    workspace = Path("/workspace")
+    if workspace.is_dir():
+        return "/workspace/boundary-data/boundary.db"
+    return "./data/boundary.db"
 
 
 class InvalidModelEndpointError(ValueError):
@@ -53,6 +61,7 @@ class Settings(BaseModel):
     model_timeout_seconds: float = Field(
         default=DEFAULT_MODEL_TIMEOUT_SECONDS, gt=0, le=600
     )
+    database_path: str = Field(default_factory=default_database_path, min_length=1)
     remote_apis_enabled: bool = False
 
     @field_validator("model_base_url")
@@ -71,4 +80,7 @@ class Settings(BaseModel):
             ),
             model_name=os.getenv("BOUNDARY_MODEL_NAME", DEFAULT_MODEL_NAME),
             model_timeout_seconds=float(raw_timeout),
+            database_path=os.getenv(
+                "BOUNDARY_DATABASE_PATH", default_database_path()
+            ),
         )

@@ -84,6 +84,34 @@ External communication/calendar/sharing actions require approval; destructive
 operations are destructive; and credential export is blocked. Model-provided
 classifications can never weaken these rules.
 
+## Persistent approval workflow
+
+Milestone 3 stores plans as auditable runs in local SQLite. On Radeon Cloud the
+default database is `/workspace/boundary-data/boundary.db`; override it with
+`BOUNDARY_DATABASE_PATH`. The database contains `runs`, `plan_steps`,
+`approval_requests`, `approval_decisions`, `audit_events`, and
+`simulated_tool_results` tables initialized deterministically at startup.
+
+Workflow endpoints:
+
+- `POST /runs` creates and stores a policy-normalized plan without executing it.
+- `GET /runs/{run_id}` returns run, step, approval, and simulated-result state.
+- `GET /approvals?run_id=...` lists pending, step-scoped approvals.
+- `POST /approvals/{approval_id}/approve` and `/reject` record an actor decision.
+- `POST /runs/{run_id}/execute` runs only preflighted simulations.
+- `GET /runs/{run_id}/audit` returns the append-only event chain.
+- `GET /audit/verify/{run_id}` verifies every SHA-256 audit link.
+
+Safe steps move from `ready` to `executed`. Protected steps move through
+`awaiting_approval` and `approved` before execution; rejected steps can only be
+skipped, and blocked steps cannot execute. Invalid transitions return typed HTTP
+409 responses. Execution re-applies semantic policy and verifies approval scope
+immediately before every simulated tool invocation.
+
+All tool results state `simulated=true` and `no_external_side_effect=true`.
+There are no real email, calendar, deletion, command, payment, upload,
+publication, external API, or other side-effecting tool implementations.
+
 ## Radeon Cloud
 
 Radeon Cloud is supported as the Ubuntu 22.04 GPU target. The expected supplied

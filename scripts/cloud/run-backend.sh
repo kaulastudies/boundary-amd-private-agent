@@ -18,6 +18,7 @@ fi
 export BOUNDARY_MODEL_BASE_URL="${BOUNDARY_MODEL_BASE_URL:-http://127.0.0.1:8000/v1}"
 export BOUNDARY_MODEL_NAME="${BOUNDARY_MODEL_NAME:-boundary-qwen3-8b}"
 export BOUNDARY_MODEL_TIMEOUT_SECONDS="${BOUNDARY_MODEL_TIMEOUT_SECONDS:-30}"
+export BOUNDARY_DATABASE_PATH="${BOUNDARY_DATABASE_PATH:-${WORKSPACE_ROOT}/boundary-data/boundary.db}"
 exec "${APP_VENV}/bin/python" -m uvicorn boundary_backend.main:app \
   --app-dir "${REPO_ROOT}/backend/src" \
   --host 0.0.0.0 \

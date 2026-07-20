@@ -1,9 +1,9 @@
 """Typed API request and response models."""
 
 from enum import Enum
-from typing import Literal
+from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class HealthResponse(BaseModel):
@@ -45,6 +45,35 @@ class ActionType(str, Enum):
     unsupported = "unsupported"
 
 
+class RunState(str, Enum):
+    planned = "planned"
+    awaiting_approval = "awaiting_approval"
+    approved = "approved"
+    rejected = "rejected"
+    executing = "executing"
+    completed = "completed"
+    failed = "failed"
+    blocked = "blocked"
+
+
+class StepState(str, Enum):
+    planned = "planned"
+    ready = "ready"
+    awaiting_approval = "awaiting_approval"
+    approved = "approved"
+    rejected = "rejected"
+    executed = "executed"
+    failed = "failed"
+    blocked = "blocked"
+    skipped = "skipped"
+
+
+class ApprovalStatus(str, Enum):
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
+
+
 class PlanRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -67,3 +96,75 @@ class PlanResponse(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     steps: list[PlanStep] = Field(min_length=1, max_length=50)
+
+    @model_validator(mode="after")
+    def step_ids_must_be_unique(self) -> "PlanResponse":
+        identifiers = [step.id for step in self.steps]
+        if len(identifiers) != len(set(identifiers)):
+            raise ValueError("plan step ids must be unique")
+        return self
+
+
+class SimulatedToolResult(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    simulated: Literal[True] = True
+    no_external_side_effect: Literal[True] = True
+    summary: str = Field(min_length=1, max_length=500)
+    artifact_type: str = Field(min_length=1, max_length=100)
+
+
+class RunStepResponse(PlanStep):
+    state: StepState
+    approval_id: Optional[str] = None
+    tool_result: Optional[SimulatedToolResult] = None
+
+
+class RunResponse(BaseModel):
+    run_id: str
+    state: RunState
+    steps: list[RunStepResponse]
+
+
+class ApprovalDecisionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    actor: str = Field(min_length=1, max_length=200, strict=True)
+    reason: Optional[str] = Field(default=None, max_length=500)
+
+
+class ApprovalResponse(BaseModel):
+    approval_id: str
+    run_id: str
+    step_id: str
+    status: ApprovalStatus
+    actor: Optional[str] = None
+    reason: Optional[str] = None
+
+
+class ConflictResponse(BaseModel):
+    code: str
+    message: str
+
+
+class AuditEventResponse(BaseModel):
+    event_id: str
+    timestamp_utc: str
+    run_id: str
+    step_id: Optional[str] = None
+    event_type: str
+    actor: str
+    previous_state: Optional[str] = None
+    new_state: Optional[str] = None
+    action_type: Optional[str] = None
+    risk_level: Optional[str] = None
+    policy_reason: Optional[str] = None
+    metadata: dict[str, Any]
+    previous_event_hash: Optional[str] = None
+    event_hash: str
+
+
+class AuditVerifyResponse(BaseModel):
+    run_id: str
+    valid: bool
+    first_invalid_event_id: Optional[str] = None

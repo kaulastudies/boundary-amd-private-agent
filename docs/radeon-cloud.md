@@ -49,6 +49,7 @@ BOUNDARY_PORT=8080 \
 BOUNDARY_MODEL_BASE_URL=http://127.0.0.1:8000/v1 \
 BOUNDARY_MODEL_NAME=boundary-qwen3-8b \
 BOUNDARY_MODEL_TIMEOUT_SECONDS=30 \
+BOUNDARY_DATABASE_PATH=/workspace/boundary-data/boundary.db \
 bash scripts/cloud/run-backend.sh
 ```
 
@@ -88,6 +89,30 @@ local review and drafting plus email sending, deletion, and meeting scheduling.
 It fails if external actions are not sensitive and approval-required, deletion
 is not destructive, required policy fields are missing, or any result claims an
 external action occurred.
+
+## Persistent workflow and audit validation
+
+The backend initializes its SQLite schema at
+`/workspace/boundary-data/boundary.db`. This persistent local database stores
+runs, plan steps, approval requests and decisions, append-only audit events, and
+simulated results. It is separate from `/opt/venv` and contains no model runtime.
+
+With vLLM and the backend already running:
+
+```bash
+cd /workspace/boundary-amd-private-agent
+bash scripts/cloud/test-live-approval-flow.sh
+bash scripts/cloud/test-live-audit-chain.sh
+cat /workspace/boundary-artifacts/debug/approval-flow-validation.txt
+cat /workspace/boundary-artifacts/debug/audit-chain-validation.txt
+```
+
+The approval-flow test verifies that protected steps pause, early execution is
+blocked, send and schedule actions require explicit approval, rejected deletion
+is skipped, and every result is simulated. The audit test verifies the primary
+chain, copies the database to an isolated temporary file, tampers only with that
+copy, confirms detection, and removes the copy. It never alters the primary
+database.
 
 ## Security boundary
 

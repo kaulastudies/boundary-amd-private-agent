@@ -12,6 +12,14 @@ if grep -Eiq '(pip install|apt(-get)? install|dnf install|yum install)' "${SCRIP
   printf 'ERROR: verification scripts must not install packages.\n' >&2
   exit 1
 fi
+if grep -Eiq '(pip install|apt(-get)? install|dnf install|yum install|vllm serve|huggingface-cli)' "${SCRIPT_DIR}/test-live-approval-flow.sh" "${SCRIPT_DIR}/test-live-audit-chain.sh"; then
+  printf 'ERROR: workflow live tests must not install packages, launch vLLM, or download models.\n' >&2
+  exit 1
+fi
+if ! grep -q 'shutil.copy2(primary, copied)' "${SCRIPT_DIR}/test-live-audit-chain.sh"; then
+  printf 'ERROR: audit tamper test must operate on an isolated database copy.\n' >&2
+  exit 1
+fi
 if grep -Eiq '(authorization:|api[_ -]?key|vllm serve|huggingface-cli)' "${SCRIPT_DIR}/test-live-plan.sh" "${SCRIPT_DIR}/test-live-permission-policy.sh"; then
   printf 'ERROR: live plan test must not use credentials, launch vLLM, or download models.\n' >&2
   exit 1
