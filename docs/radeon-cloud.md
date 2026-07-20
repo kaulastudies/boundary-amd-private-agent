@@ -72,7 +72,9 @@ After both services are running, execute the bounded live smoke test:
 ```bash
 cd /workspace/boundary-amd-private-agent
 bash scripts/cloud/test-live-plan.sh
+bash scripts/cloud/test-live-permission-policy.sh
 cat /workspace/boundary-artifacts/debug/agent-plan-validation.txt
+cat /workspace/boundary-artifacts/debug/permission-policy-validation.txt
 ```
 
 The smoke test checks vLLM discovery, both backend health endpoints, and one
@@ -80,6 +82,12 @@ schema-constrained plan. It validates the plan and deterministic approval policy
 locally, then writes a non-secret result to
 `/workspace/boundary-artifacts/debug/agent-plan-validation.txt`. It does not
 launch a model, install packages, or send credentials.
+
+The permission-policy test submits a planning-only contract workflow containing
+local review and drafting plus email sending, deletion, and meeting scheduling.
+It fails if external actions are not sensitive and approval-required, deletion
+is not destructive, required policy fields are missing, or any result claims an
+external action occurred.
 
 ## Security boundary
 

@@ -18,8 +18,10 @@ VALID_PLAN = {
             "id": "step-1",
             "title": "Inspect",
             "description": "Review the local files.",
+            "action_type": "inspect_local",
             "risk_level": "safe",
             "requires_approval": False,
+            "policy_reason": "Local read-only operation",
         }
     ]
 }
@@ -139,6 +141,7 @@ def test_sensitive_false_is_deterministically_corrected() -> None:
     response = plan_request(client)
     assert response.status_code == 200
     assert response.json()["steps"][0]["requires_approval"] is True
+    assert response.json()["steps"][0]["risk_level"] == "sensitive"
     assert sum(request.url.path.endswith("/chat/completions") for request in requests) == 1
 
 

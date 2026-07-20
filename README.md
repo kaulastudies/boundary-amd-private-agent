@@ -77,6 +77,13 @@ exposes hidden chain-of-thought. The backend always forces approval for
 semantically invalid result receives at most one repair request to the same
 local endpoint.
 
+Every plan step includes a typed `action_type` and backend-authored
+`policy_reason`. The deterministic semantic policy independently checks titles
+and descriptions, distinguishes drafting from sending, and only elevates risk.
+External communication/calendar/sharing actions require approval; destructive
+operations are destructive; and credential export is blocked. Model-provided
+classifications can never weaken these rules.
+
 ## Radeon Cloud
 
 Radeon Cloud is supported as the Ubuntu 22.04 GPU target. The expected supplied

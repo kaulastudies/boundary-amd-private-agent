@@ -21,15 +21,10 @@ from .models import (
     ModelHealthResponse,
     PlanRequest,
     PlanResponse,
-    RiskLevel,
 )
+from .policy import enforce_action_policy
 
 logger = logging.getLogger(__name__)
-PROTECTED_RISK_LEVELS = {
-    RiskLevel.sensitive,
-    RiskLevel.destructive,
-    RiskLevel.blocked,
-}
 
 
 def _plan_prompt(task: str) -> str:
@@ -37,9 +32,11 @@ def _plan_prompt(task: str) -> str:
         "Create a concise execution plan for the user task below. Plan only; do not "
         "execute tools or claim actions were performed. Return one JSON object with a "
         "'steps' array. Every step must contain exactly: id, title, description, "
-        "risk_level, requires_approval. risk_level must be one of safe, review, "
-        "sensitive, destructive, blocked. sensitive, destructive, and blocked steps "
-        "must set requires_approval to true. Do not include reasoning or any fields "
+        "action_type, risk_level, requires_approval, policy_reason. action_type must "
+        "use the provided schema taxonomy. risk_level must be one of safe, review, "
+        "sensitive, destructive, blocked. Distinguish local drafting from sending, "
+        "and suggesting a meeting time from scheduling it. policy_reason must be a "
+        "short non-sensitive category explanation. Do not include reasoning or fields "
         f"outside the requested plan.\n\nUser task:\n{task}"
     )
 
@@ -51,19 +48,6 @@ def _validation_summary(exc: ValidationError) -> str:
         location = ".".join(str(part) for part in error.get("loc", ())) or "root"
         summaries.append(f"field={location} type={error.get('type', 'unknown')}")
     return "; ".join(summaries[:5]) or "field=root type=unknown"
-
-
-def _enforce_approval_policy(plan: PlanResponse) -> PlanResponse:
-    """Make backend approval policy authoritative over model output."""
-    corrected_steps = []
-    for step in plan.steps:
-        requires_approval = (
-            True if step.risk_level in PROTECTED_RISK_LEVELS else step.requires_approval
-        )
-        corrected_steps.append(
-            step.model_copy(update={"requires_approval": requires_approval})
-        )
-    return plan.model_copy(update={"steps": corrected_steps})
 
 
 async def _generate_plan(
@@ -83,7 +67,7 @@ async def _generate_plan(
             request_prompt, schema, "boundary_plan"
         )
         try:
-            return _enforce_approval_policy(PlanResponse.model_validate_json(raw_plan))
+            return enforce_action_policy(PlanResponse.model_validate_json(raw_plan))
         except ValidationError as exc:
             validation_summary = _validation_summary(exc)
             logger.warning(
@@ -106,7 +90,7 @@ def create_app(
         model_name=settings.model_name,
         timeout_seconds=settings.model_timeout_seconds,
     )
-    application = FastAPI(title=settings.app_name, version="0.2.1")
+    application = FastAPI(title=settings.app_name, version="0.2.2")
 
     @application.get("/health", response_model=HealthResponse, tags=["system"])
     async def health() -> HealthResponse:

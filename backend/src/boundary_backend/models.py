@@ -27,6 +27,24 @@ class RiskLevel(str, Enum):
     blocked = "blocked"
 
 
+class ActionType(str, Enum):
+    inspect_local = "inspect_local"
+    analyze_local = "analyze_local"
+    draft_local = "draft_local"
+    write_local = "write_local"
+    send_external = "send_external"
+    schedule_external = "schedule_external"
+    share_external = "share_external"
+    upload_external = "upload_external"
+    publish_external = "publish_external"
+    delete_local = "delete_local"
+    overwrite_local = "overwrite_local"
+    execute_command = "execute_command"
+    financial_action = "financial_action"
+    credential_access = "credential_access"
+    unsupported = "unsupported"
+
+
 class PlanRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -39,8 +57,10 @@ class PlanStep(BaseModel):
     id: str = Field(min_length=1, max_length=100, strict=True)
     title: str = Field(min_length=1, max_length=200, strict=True)
     description: str = Field(min_length=1, max_length=2_000, strict=True)
+    action_type: ActionType
     risk_level: RiskLevel
     requires_approval: bool = Field(strict=True)
+    policy_reason: str = Field(min_length=1, max_length=200, strict=True)
 
 
 class PlanResponse(BaseModel):
