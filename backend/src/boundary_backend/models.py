@@ -78,6 +78,56 @@ class PlanRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     task: str = Field(min_length=1, max_length=10_000, strict=True)
+    use_private_evidence: bool = True
+    evidence_top_k: int = Field(default=4, ge=1, le=8)
+
+
+class EvidenceItem(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    citation_label: str = Field(min_length=1, max_length=16)
+    document_title: str = Field(min_length=1, max_length=200)
+    section: str = Field(min_length=1, max_length=200)
+    chunk_id: str = Field(min_length=1, max_length=100)
+    snippet: str = Field(max_length=600)
+    relevance_score: float = Field(allow_inf_nan=False)
+
+
+class RagHealthResponse(BaseModel):
+    available: bool
+    local_only: Literal[True] = True
+    embedding_model: str = Field(min_length=1, max_length=200)
+    embedding_device: str = Field(min_length=1, max_length=50)
+    index_backend: Literal["faiss", "numpy", "unavailable"]
+    document_count: int = Field(ge=0, le=1_000_000)
+    chunk_count: int = Field(ge=0, le=10_000_000)
+    persisted_index: Literal["boundary.faiss"] = "boundary.faiss"
+    remote_apis_enabled: Literal[False] = False
+
+
+class RagDocumentResponse(BaseModel):
+    document_id: str = Field(min_length=1, max_length=100)
+    title: str = Field(min_length=1, max_length=200)
+    synthetic: Literal[True] = True
+    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    chunk_count: int = Field(ge=0, le=100_000)
+    ingested_at: str = Field(min_length=1, max_length=64)
+
+
+class RagQueryRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    query: str = Field(min_length=1, max_length=10_000, strict=True)
+    top_k: int = Field(default=4, ge=1, le=8)
+
+
+class RagQueryResponse(BaseModel):
+    evidence: list[EvidenceItem] = Field(max_length=8)
+
+
+class RagBootstrapResponse(BaseModel):
+    document_count: int = Field(ge=0, le=1_000_000)
+    chunk_count: int = Field(ge=0, le=10_000_000)
+    embedding_model: str = Field(min_length=1, max_length=200)
+    index_backend: Literal["faiss", "numpy"]
 
 
 class PlanStep(BaseModel):
@@ -124,6 +174,8 @@ class RunResponse(BaseModel):
     run_id: str
     state: RunState
     steps: list[RunStepResponse]
+    evidence: list[EvidenceItem] = Field(default_factory=list, max_length=8)
+    private_evidence_used: bool = False
 
 
 class ApprovalDecisionRequest(BaseModel):

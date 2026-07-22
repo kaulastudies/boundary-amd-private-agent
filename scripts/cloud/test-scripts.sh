@@ -44,4 +44,12 @@ if grep -Eiq '(npm install|pnpm install|yarn install)' "${SCRIPT_DIR}/run-fronte
   printf 'ERROR: frontend runtime launcher must not install packages.\n' >&2
   exit 1
 fi
+if grep -Eiq '(pip install|apt(-get)? install|dnf install|yum install|vllm serve|curl -k|authorization:|api[_ -]?key)' "${SCRIPT_DIR}/benchmark-rag.sh"; then
+  printf 'ERROR: RAG benchmark must not install packages, launch models, disable TLS, or use credentials.\n' >&2
+  exit 1
+fi
+if ! grep -q '/workspace/boundary-artifacts/benchmarks/private-rag-benchmark.json' "${SCRIPT_DIR}/benchmark-rag.sh"; then
+  printf 'ERROR: RAG benchmark output must use the persistent artifact path.\n' >&2
+  exit 1
+fi
 printf 'Cloud script syntax and safety checks passed.\n'

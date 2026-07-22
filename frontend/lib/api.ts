@@ -6,6 +6,10 @@ import type {
   Health,
   ModelHealth,
   Run,
+  RagHealth,
+  RagDocument,
+  RagBootstrap,
+  EvidenceItem,
 } from "@/lib/types";
 
 export class BoundaryApiError extends Error {
@@ -64,6 +68,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 export const boundaryApi = {
   health: () => request<Health>("health"),
   modelHealth: () => request<ModelHealth>("model/health"),
+  ragHealth: () => request<RagHealth>("rag/health"),
+  ragDocuments: () => request<RagDocument[]>("rag/documents"),
+  bootstrapRag: () => request<RagBootstrap>("rag/bootstrap-demo", { method: "POST", body: "{}" }),
+  queryRag: (query: string, top_k = 4) => request<{ evidence: EvidenceItem[] }>("rag/query", { method: "POST", body: JSON.stringify({ query, top_k }) }),
   createRun: (task: string) => request<Run>("runs", {
     method: "POST",
     body: JSON.stringify({ task }),

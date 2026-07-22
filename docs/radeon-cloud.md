@@ -137,6 +137,26 @@ review policy labels, decide approvals, execute simulations, and show the audit
 verification card. Resetting the view does not delete SQLite workflow history.
 All current tool operations remain simulations with no external side effects.
 
+## Private Evidence RAG
+
+Use persistent caches `HF_HOME=/workspace/cache/huggingface` and
+`HUGGINGFACE_HUB_CACHE=/workspace/cache/huggingface/hub`. Embeddings default to
+CPU so Qwen3 retains Radeon GPU memory. Run:
+
+```bash
+curl --fail -X POST http://127.0.0.1:8080/rag/bootstrap-demo
+curl --fail http://127.0.0.1:8080/rag/health
+curl --fail http://127.0.0.1:8080/rag/documents
+bash scripts/cloud/benchmark-rag.sh
+```
+
+FAISS persists at `/workspace/boundary-data/rag/boundary.faiss`; metadata is
+atomically replaced and SQLite retains documents/chunks across restarts. The
+benchmark writes measured JSON under `/workspace/boundary-artifacts/benchmarks`.
+Only claim FAISS after Radeon reports `index_backend=faiss`. Synthetic evidence is
+untrusted and cannot authorize email, scheduling, deletion, tools, remote APIs, or
+policy changes. No remote AI provider or vector database is configured.
+
 ## Security boundary
 
 - Do not place secrets, tokens, or credentials in Git, notebooks, demo data, or

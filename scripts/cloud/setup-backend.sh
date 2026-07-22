@@ -2,12 +2,12 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-WORKSPACE_ROOT="${BOUNDARY_WORKSPACE_ROOT:-/workspace}"
-APP_VENV="${BOUNDARY_BACKEND_VENV:-${WORKSPACE_ROOT}/venvs/boundary-backend}"
+WORKSPACE_ROOT=/workspace
+APP_VENV=/workspace/venvs/boundary-backend
 PYTHON_BOOTSTRAP="${BOUNDARY_SYSTEM_PYTHON:-$(command -v python3 || true)}"
 
-if [[ "${APP_VENV}" == /opt/venv || "${APP_VENV}" == /opt/venv/* ]]; then
-  printf 'ERROR: refusing to create or modify the bundled /opt/venv environment.\n' >&2
+if [[ "${PYTHON_BOOTSTRAP}" == /opt/venv || "${PYTHON_BOOTSTRAP}" == /opt/venv/* ]]; then
+  printf 'ERROR: refusing to create or modify the bundled /opt/venv environment; it cannot bootstrap the application environment.\n' >&2
   exit 1
 fi
 if [[ -z "${PYTHON_BOOTSTRAP}" || ! -x "${PYTHON_BOOTSTRAP}" ]]; then

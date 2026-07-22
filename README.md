@@ -153,6 +153,17 @@ BOUNDARY_PORT=8080 BOUNDARY_MODEL_BASE_URL=http://127.0.0.1:8000/v1 \
   bash scripts/cloud/run-backend.sh
 ```
 
+## Private Evidence RAG
+
+Milestone 5A grounds plans in the bundled synthetic documents under
+`demo-data/private-rag`. `POST /rag/bootstrap-demo` chunks them deterministically,
+embeds them locally on CPU, and persists normalized vectors in FAISS under
+`/workspace/boundary-data/rag`. Metadata remains in SQLite. No remote AI provider
+or vector database is configured; documents are untrusted and cannot override the
+approval policy. Planning remains available without an index and reports that no
+private evidence was used. Run `bash scripts/cloud/benchmark-rag.sh` on Radeon for
+real measurements.
+
 JupyterLab is the primary access path; SSH is optional when enabled. See
 [`docs/radeon-cloud.md`](docs/radeon-cloud.md) for the complete laptop → GitHub
 → Radeon Cloud workflow, exact checks, storage layout, and security rules.

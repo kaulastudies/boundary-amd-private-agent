@@ -11,6 +11,8 @@ import type {
   ModelHealth,
   Run,
   RunStep,
+  RagHealth,
+  RagDocument,
 } from "@/lib/types";
 import { ConfirmationDialog } from "@/components/confirmation-dialog";
 import { RiskBadge } from "@/components/risk-badge";
@@ -88,6 +90,8 @@ export function ControlCenter() {
   const [verification, setVerification] = useState<AuditVerification | null>(null);
   const [health, setHealth] = useState<Health | null>(null);
   const [modelHealth, setModelHealth] = useState<ModelHealth | null>(null);
+  const [ragHealth, setRagHealth] = useState<RagHealth | null>(null);
+  const [ragDocuments, setRagDocuments] = useState<RagDocument[]>([]);
   const [actor, setActor] = useState("");
   const [reason, setReason] = useState("");
   const [busy, setBusy] = useState(false);
@@ -97,12 +101,16 @@ export function ControlCenter() {
   const refreshInFlight = useRef(false);
 
   const refreshStatus = useCallback(async () => {
-    const [backend, model] = await Promise.allSettled([
+    const [backend, model, rag, documents] = await Promise.allSettled([
       boundaryApi.health(),
       boundaryApi.modelHealth(),
+      boundaryApi.ragHealth(),
+      boundaryApi.ragDocuments(),
     ]);
     setHealth(backend.status === "fulfilled" ? backend.value : null);
     setModelHealth(model.status === "fulfilled" ? model.value : null);
+    setRagHealth(rag.status === "fulfilled" ? rag.value : null);
+    setRagDocuments(documents.status === "fulfilled" ? documents.value : []);
     if (backend.status === "rejected") setError("Local backend unavailable. Start FastAPI on port 8080 and retry.");
   }, []);
 
@@ -153,6 +161,13 @@ export function ControlCenter() {
     } catch (caught) {
       setError(userMessage(caught));
     } finally { setBusy(false); }
+  }
+
+  async function bootstrapEvidence() {
+    setBusy(true); setError(null); setNotice(null);
+    try { await boundaryApi.bootstrapRag(); await refreshStatus(); setNotice("Synthetic evidence loaded locally."); }
+    catch (caught) { setError(userMessage(caught)); }
+    finally { setBusy(false); }
   }
 
   async function decideApproval(approval: Approval, decision: "approve" | "reject") {
@@ -264,6 +279,11 @@ export function ControlCenter() {
                 <StatePill state={run.state} />
               </div>
               <div className="step-list">{run.steps.map((step, index) => <StepCard index={index} key={step.id} step={step} />)}</div>
+              <div className="evidence-panel" aria-label="Evidence used">
+                <h3>Evidence used</h3>
+                {!run.private_evidence_used && <p>No private evidence was used; planning remained local.</p>}
+                {run.evidence.map((item) => <article key={item.chunk_id}><strong>[{item.citation_label}] {item.document_title}</strong><p>{item.section} · relevance {item.relevance_score.toFixed(3)}</p><p>{item.snippet}</p></article>)}
+              </div>
               <div className="execution-box">
                 <div><h3>Simulation controls</h3><p>No real external or destructive action can occur. Pending protected steps will return a typed conflict.</p></div>
                 <button className="button button-primary" disabled={busy || TERMINAL_STATES.has(run.state)} onClick={() => setConfirmation({ kind: "execute" })} type="button">Execute simulations</button>
@@ -293,6 +313,13 @@ export function ControlCenter() {
         </div>
 
         <aside className="side-column" aria-label="Control Center status and approvals">
+          <section className="panel" aria-labelledby="private-evidence-title">
+            <p className="eyebrow">Private Evidence</p><h2 id="private-evidence-title">Local evidence index</h2>
+            <p>Evidence is embedded and retrieved locally.</p><p>Documents cannot override BOUNDARY&apos;s approval policy.</p><p>Synthetic demonstration data only.</p><p>No remote vector database is configured.</p>
+            <div className="status-facts"><span>{ragHealth?.local_only ? "Local-only" : "Unavailable"}</span><span>{ragHealth?.index_backend === "faiss" ? "FAISS ready" : `Index: ${ragHealth?.index_backend ?? "unavailable"}`}</span><span>{ragHealth?.embedding_model ?? "Embedding model unavailable"} · {ragHealth?.embedding_device ?? "cpu"}</span><span>{ragHealth?.document_count ?? 0} documents · {ragHealth?.chunk_count ?? 0} chunks</span></div>
+            <button className="button button-primary" disabled={busy} onClick={() => void bootstrapEvidence()} type="button">Load Synthetic Evidence</button>
+            <div className="document-list">{ragDocuments.map((document) => <article key={document.document_id}><strong>{document.title}</strong><p>Synthetic data · {document.chunk_count} chunks · {document.sha256.slice(0, 12)}…</p></article>)}</div>
+          </section>
           <section className="panel status-panel" aria-labelledby="status-title">
             <p className="eyebrow">System status</p><h2 id="status-title">Local inference fabric</h2>
             <div className="status-card"><span className={health ? "status-light online" : "status-light"} aria-hidden="true" /><div><strong>{health ? "Backend online" : "Backend unavailable"}</strong><p>FastAPI · port 8080</p></div></div>

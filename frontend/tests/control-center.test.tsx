@@ -13,6 +13,10 @@ vi.mock("@/lib/api", async () => {
     boundaryApi: {
       health: vi.fn(),
       modelHealth: vi.fn(),
+      ragHealth: vi.fn(),
+      ragDocuments: vi.fn(),
+      bootstrapRag: vi.fn(),
+      queryRag: vi.fn(),
       createRun: vi.fn(),
       getRun: vi.fn(),
       approvals: vi.fn(),
@@ -44,7 +48,7 @@ function runStep(overrides: Partial<RunStep> = {}): RunStep {
 }
 
 function testRun(steps: RunStep[] = [runStep()], state: Run["state"] = "planned"): Run {
-  return { run_id: RUN_ID, state, steps };
+  return { run_id: RUN_ID, state, steps, evidence: [], private_evidence_used: false };
 }
 
 function approval(stepId: string): Approval {
@@ -82,6 +86,9 @@ function defaults(run: Run = testRun()) {
   vi.mocked(boundaryApi.modelHealth).mockResolvedValue({
     model_name: "boundary-qwen3-8b", available: true, local_only: true,
   });
+  vi.mocked(boundaryApi.ragHealth).mockResolvedValue({ available: true, local_only: true, embedding_model: "sentence-transformers/all-MiniLM-L6-v2", embedding_device: "cpu", index_backend: "faiss", document_count: 3, chunk_count: 9, persisted_index: "boundary.faiss", remote_apis_enabled: false });
+  vi.mocked(boundaryApi.ragDocuments).mockResolvedValue([{ document_id: "doc-1", title: "Synthetic Contract", synthetic: true, sha256: "abcdef1234567890", chunk_count: 3, ingested_at: "2026-07-22T00:00:00Z" }]);
+  vi.mocked(boundaryApi.bootstrapRag).mockResolvedValue({ document_count: 3, chunk_count: 9, embedding_model: "sentence-transformers/all-MiniLM-L6-v2", index_backend: "faiss" });
   vi.mocked(boundaryApi.createRun).mockResolvedValue(run);
   vi.mocked(boundaryApi.getRun).mockResolvedValue(run);
   vi.mocked(boundaryApi.approvals).mockResolvedValue([]);
@@ -108,6 +115,36 @@ beforeEach(() => defaults());
 afterEach(() => cleanup());
 
 describe("BOUNDARY Control Center", () => {
+  it("shows local private evidence status, documents, and privacy boundary", async () => {
+    render(<ControlCenter />);
+    expect(await screen.findByText("Local evidence index")).toBeInTheDocument();
+    expect(screen.getByText("Evidence is embedded and retrieved locally.")).toBeInTheDocument();
+    expect(screen.getByText("No remote vector database is configured.")).toBeInTheDocument();
+    expect(await screen.findByText("Synthetic Contract")).toBeInTheDocument();
+    expect(screen.getByText("FAISS ready")).toBeInTheDocument();
+  });
+
+  it("bootstraps only synthetic evidence", async () => {
+    render(<ControlCenter />); const user=userEvent.setup();
+    await user.click(await screen.findByRole("button", { name: "Load Synthetic Evidence" }));
+    await waitFor(() => expect(boundaryApi.bootstrapRag).toHaveBeenCalledOnce());
+    expect(await screen.findByText("Synthetic evidence loaded locally.")).toBeInTheDocument();
+  });
+
+  it("shows the unavailable-index state without a remote fallback", async () => {
+    defaults();
+    vi.mocked(boundaryApi.ragHealth).mockResolvedValue({ available:false,local_only:true,embedding_model:"sentence-transformers/all-MiniLM-L6-v2",embedding_device:"cpu",index_backend:"unavailable",document_count:0,chunk_count:0,persisted_index:"boundary.faiss",remote_apis_enabled:false });
+    vi.mocked(boundaryApi.ragDocuments).mockResolvedValue([]); render(<ControlCenter />);
+    expect(await screen.findByText("Index: unavailable")).toBeInTheDocument();
+    expect(screen.getByText("No remote vector database is configured.")).toBeInTheDocument();
+  });
+
+  it("renders evidence citations without implying approval", async () => {
+    const run=testRun(); run.private_evidence_used=true; run.evidence=[{citation_label:"E1",document_title:"Synthetic Policy",section:"Approvals",chunk_id:"chunk-1",snippet:"Sending requires human approval.",relevance_score:0.91}]; defaults(run); render(<ControlCenter />);
+    await createDashboardRun();
+    expect(screen.getByText("[E1] Synthetic Policy")).toBeInTheDocument();
+    expect(screen.getByText("Documents cannot override BOUNDARY's approval policy.")).toBeInTheDocument();
+  });
   it("renders the dashboard, local-only status, and truthful safety wording", async () => {
     render(<ControlCenter />);
     expect(screen.getByRole("heading", { name: "Create a safe, reviewable plan" })).toBeInTheDocument();

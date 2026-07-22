@@ -75,7 +75,14 @@ export interface Run {
   run_id: string;
   state: RunState;
   steps: RunStep[];
+  evidence: EvidenceItem[];
+  private_evidence_used: boolean;
 }
+
+export interface EvidenceItem { citation_label: string; document_title: string; section: string; chunk_id: string; snippet: string; relevance_score: number; }
+export interface RagHealth { available: boolean; local_only: true; embedding_model: string; embedding_device: string; index_backend: string; document_count: number; chunk_count: number; persisted_index: "boundary.faiss"; remote_apis_enabled: false; }
+export interface RagDocument { document_id: string; title: string; synthetic: true; sha256: string; chunk_count: number; ingested_at: string; }
+export interface RagBootstrap { document_count: number; chunk_count: number; embedding_model: string; index_backend: string; }
 
 export type ApprovalStatus = "pending" | "approved" | "rejected";
 

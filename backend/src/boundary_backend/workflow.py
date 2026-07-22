@@ -406,6 +406,11 @@ class WorkflowDatabase:
             )
         return run_id
 
+    def append_safe_audit(self, run_id: str, event_type: str, metadata: dict[str, Any]) -> None:
+        """Append bounded metadata-only events without exposing task or document text."""
+        with self._lock, self._connect() as connection:
+            self._append_audit(connection, run_id, event_type, "retrieval", metadata=metadata)
+
     @staticmethod
     def _step_from_row(row: sqlite3.Row) -> PlanStep:
         return PlanStep(

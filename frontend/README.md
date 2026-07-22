@@ -26,6 +26,11 @@ already be running for the complete workflow.
 5. Inspect stored results, the event timeline, and audit-chain verification.
 6. Use **Reset View** to clear the browser view without deleting backend data.
 
+The Private Evidence card loads bundled synthetic evidence and shows local
+embedding, FAISS, document, and chunk status. Citations appear after planning.
+Documents cannot imply approval or alter policy, and the browser uses only the
+allowlisted same-origin proxy. No remote vector database is configured.
+
 No Control Center operation can perform a real email, calendar modification,
 deletion, payment, upload, publication, share, command, or other external side
 effect. The backend exposes simulated tools only.

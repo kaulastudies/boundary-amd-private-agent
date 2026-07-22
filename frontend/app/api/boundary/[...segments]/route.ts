@@ -4,6 +4,8 @@ const ID = "[0-9a-fA-F-]{36}";
 const GET_ROUTES: Array<[RegExp, (match: RegExpMatchArray) => string]> = [
   [/^health$/, () => "/health"],
   [/^model\/health$/, () => "/model/health"],
+  [/^rag\/health$/, () => "/rag/health"],
+  [/^rag\/documents$/, () => "/rag/documents"],
   [/^approvals$/, () => "/approvals"],
   [new RegExp(`^runs\/(${ID})$`), (match) => `/runs/${match[1]}`],
   [new RegExp(`^runs\/(${ID})\/audit$`), (match) => `/runs/${match[1]}/audit`],
@@ -11,6 +13,8 @@ const GET_ROUTES: Array<[RegExp, (match: RegExpMatchArray) => string]> = [
 ];
 const POST_ROUTES: Array<[RegExp, (match: RegExpMatchArray) => string]> = [
   [/^runs$/, () => "/runs"],
+  [/^rag\/bootstrap-demo$/, () => "/rag/bootstrap-demo"],
+  [/^rag\/query$/, () => "/rag/query"],
   [new RegExp(`^runs\/(${ID})\/execute$`), (match) => `/runs/${match[1]}/execute`],
   [new RegExp(`^approvals\/(${ID})\/(approve|reject)$`), (match) => `/approvals/${match[1]}/${match[2]}`],
 ];

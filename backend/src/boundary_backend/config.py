@@ -19,6 +19,12 @@ def default_database_path() -> str:
     return "./data/boundary.db"
 
 
+def default_rag_index_path() -> str:
+    if Path("/workspace").is_dir():
+        return "/workspace/boundary-data/rag/boundary.faiss"
+    return "./data/rag/boundary.faiss"
+
+
 class InvalidModelEndpointError(ValueError):
     """Raised when a model endpoint is not demonstrably local."""
 
@@ -63,6 +69,9 @@ class Settings(BaseModel):
     )
     database_path: str = Field(default_factory=default_database_path, min_length=1)
     remote_apis_enabled: bool = False
+    embedding_model: str = "sentence-transformers/all-MiniLM-L6-v2"
+    embedding_device: str = "cpu"
+    rag_index_path: str = Field(default_factory=default_rag_index_path, min_length=1)
 
     @field_validator("model_base_url")
     @classmethod
@@ -83,4 +92,7 @@ class Settings(BaseModel):
             database_path=os.getenv(
                 "BOUNDARY_DATABASE_PATH", default_database_path()
             ),
+            embedding_model=os.getenv("BOUNDARY_EMBEDDING_MODEL", "sentence-transformers/all-MiniLM-L6-v2"),
+            embedding_device=os.getenv("BOUNDARY_EMBEDDING_DEVICE", "cpu"),
+            rag_index_path=os.getenv("BOUNDARY_RAG_INDEX_PATH", default_rag_index_path()),
         )
