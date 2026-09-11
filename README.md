@@ -172,10 +172,13 @@ JupyterLab is the primary access path; SSH is optional when enabled. See
 
 ## Support continued development
 
-If this project is useful to you, you can support **Rama Chandra's independent technical work** through GitHub Sponsors:
+If this project is useful to you, you can support **Rama Chandra's independent technical work**:
 
-https://github.com/sponsors/kaulastudies
+- GitHub Sponsors: https://github.com/sponsors/kaulastudies
+- Direct support via PayPal: https://www.paypal.com/paypalme/malayanur92
 
-Sponsorship helps fund public development, AI and evaluation experiments, testing, documentation, hosting and maintenance. It does not automatically include consulting, custom development, confidential data access or exclusive IP rights.
+Support helps fund public development, AI and evaluation experiments, testing, documentation, hosting and maintenance.
+
+Funding does not automatically grant private repository access, contributor permissions, consulting, custom development, confidential data access or exclusive IP rights.
 
 <!-- RAMA-SPONSORS-END -->
