@@ -167,3 +167,15 @@ real measurements.
 JupyterLab is the primary access path; SSH is optional when enabled. See
 [`docs/radeon-cloud.md`](docs/radeon-cloud.md) for the complete laptop → GitHub
 → Radeon Cloud workflow, exact checks, storage layout, and security rules.
+
+<!-- RAMA-SPONSORS-START -->
+
+## Support continued development
+
+If this project is useful to you, you can support **Rama Chandra's independent technical work** through GitHub Sponsors:
+
+https://github.com/sponsors/kaulastudies
+
+Sponsorship helps fund public development, AI and evaluation experiments, testing, documentation, hosting and maintenance. It does not automatically include consulting, custom development, confidential data access or exclusive IP rights.
+
+<!-- RAMA-SPONSORS-END -->
