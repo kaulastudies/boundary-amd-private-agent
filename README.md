@@ -1,7 +1,6 @@
 # BOUNDARY AMD DevMaster — Track 2
 
-Local-first agent workspace for AMD development. The project is intentionally
-scaffolded without a final model implementation, remote AI APIs, or API keys.
+Local-first private-agent workspace for AMD development with a deterministic permission boundary around sensitive actions. The current implementation connects to a validated local vLLM endpoint and combines planning, retrieval, workflow state, explicit approvals, simulated execution, and hash-verifiable audit records without exposing model credentials to the browser.
 
 ## Layout
 
